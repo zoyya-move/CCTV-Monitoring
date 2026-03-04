@@ -48,15 +48,61 @@
                 onclick="openCctvModal('{{ addslashes($cctv->name) }}', '{{ addslashes($cctv->stream_url) }}')"
             >
                 <!-- Preview Stream -->
-                <div class="relative bg-black aspect-video">
-                    <iframe 
-                        src="{{ $cctv->stream_url }}" 
-                        class="w-full h-full border-0 rounded-t-2xl group-hover:scale-[1.03] transition-transform duration-300 ease-out" 
-                        frameborder="0"
-                        allowfullscreen
-                    ></iframe>
-                    <span class="absolute top-2 right-2 bg-[#B03A4B] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase tracking-wide">Live</span>
-                </div>
+             <div class="relative bg-black aspect-video">
+    <video id="video-player" autoplay muted playsinline
+        class="w-full h-full border-0 rounded-t-2xl object-cover">
+    </video>
+
+    <span class="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow uppercase tracking-wide animate-pulse">
+        ● LIVE
+    </span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    var video = document.getElementById('video-player');
+    var videoSrc = "{{ asset('stream.m3u8') }}";
+
+    if (!video) return;
+
+    if (window.Hls && Hls.isSupported()) {
+
+        var hls = new Hls({
+            liveSyncDurationCount: 1,
+            liveMaxLatencyDurationCount: 2,
+            enableWorker: true,
+            lowLatencyMode: true
+        });
+
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            console.log("HLS error:", data);
+        });
+
+    } 
+    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', function () {
+            video.play();
+        });
+    } 
+    else {
+        console.log("Browser tidak support HLS");
+    }
+
+});
+</script>
+
+
                 <!-- Card Content -->
                 <div class="flex flex-col justify-between flex-1 px-4 py-3">
                     <h2 class="text-base font-semibold text-gray-900 leading-snug truncate group-hover:text-[#B03A4B] transition-colors">
